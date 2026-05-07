@@ -55,16 +55,15 @@ install.packages("readxl")
 ```{r read-excel}
 library(readxl)
 
-# Create a sample Excel file to demonstrate (run once)
-if (!file.exists("data/student_data.xlsx")) {
-  if (!requireNamespace("writexl", quietly = TRUE)) install.packages("writexl")
-  library(writexl)
-  write_xlsx(student_data, "data/student_data.xlsx")
-}
-
-excel_data <- read_excel("data/student_data.xlsx")
+# datasample.xlsx — student sample data
+excel_data <- read_excel("data/datasample.xlsx")
 head(excel_data)
 str(excel_data)
+
+# OpeningDate.xlsx — opening dates dataset
+opening_data <- read_excel("data/OpeningDate.xlsx")
+head(opening_data)
+str(opening_data)
 ```
 
 ---
@@ -79,59 +78,37 @@ install.packages("haven")
 library(haven)
 ```
 
-### 3.1 Create and import SPSS (.sav) file
+### 3.1 Import SPSS (.sav) file
 
 ```{r spss}
-# Create sample SPSS file
-loan_data <- data.frame(
-  LoanID        = 1001:1010,
-  ClientName    = paste("Client", 1:10),
-  Gender        = c("Male","Female","Male","Female","Male","Female","Male","Female","Male","Female"),
-  Age           = c(28, 34, 45, 23, 38, 30, 52, 27, 41, 36),
-  LoanAmount    = c(5000000, 3000000, 8000000, 1500000, 6000000,
-                    2500000, 9000000, 4000000, 7000000, 3500000),
-  InterestRate  = c(15.0, 12.5, 18.0, 11.0, 16.5,
-                    13.0, 17.5, 14.0, 15.5, 12.0),
-  LoanTermMonths = c(24, 12, 36, 12, 24, 12, 48, 24, 36, 12),
-  Status        = c("Active","Closed","Active","Pending","Defaulted",
-                    "Active","Closed","Active","Pending","Active")
-)
-
-write_sav(loan_data, "data/loan_data.sav")
-
-# Read back the SPSS file
-spss_data <- read_sav("data/loan_data.sav")
+# datasample.sav — SPSS format
+spss_data <- read_sav("data/datasample.sav")
 head(spss_data)
 str(spss_data)
 ```
 
-### 3.2 Create and import Stata (.dta) file
+### 3.2 Import Stata (.dta) file
 
 ```{r stata}
-write_dta(loan_data, "data/loan_data.dta")
-
-# Read the Stata file
-stata_data <- read_dta("data/loan_data.dta")
+# loan_datasample.dta — loan data in Stata format (100 loan records)
+stata_data <- read_dta("data/loan_datasample.dta")
 head(stata_data)
 str(stata_data)
 ```
 
-### 3.3 Create and import SAS (.sas7bdat) file
+### 3.3 SAS (.sas7bdat) file
 
-```{r sas}
-write_sas(loan_data, "data/loan_data.sas7bdat")
-
-# Read the SAS file
-sas_data <- read_sas("data/loan_data.sas7bdat")
-head(sas_data)
-str(sas_data)
+```{r sas, eval=FALSE}
+# Requires a SAS-format file — example code shown below
+# sas_data <- read_sas("data/your_file.sas7bdat")
+# head(sas_data)
 ```
 
 ---
 
 ## 4. Importing from Database Management Systems
 
-### 4.1 SQLite (portable, no server needed)
+### 4.1 SQLite (portable, no server needed — school.db is included in this project)
 
 ```{r install-dbi, eval=FALSE}
 install.packages("DBI")
@@ -142,21 +119,21 @@ install.packages("RSQLite")
 library(DBI)
 library(RSQLite)
 
-# Create a local SQLite database
+# Connect to the existing SQLite database
 con_sqlite <- dbConnect(RSQLite::SQLite(), "data/school.db")
-
-# Write the student table into the database
-dbWriteTable(con_sqlite, "students", student_data, overwrite = TRUE)
-dbWriteTable(con_sqlite, "loans",    loan_data,    overwrite = TRUE)
 
 # List available tables
 dbListTables(con_sqlite)
 
-# Query the students table
+# Import the students table
 students_db <- dbGetQuery(con_sqlite, "SELECT * FROM students")
 head(students_db)
 
-# Query with a filter
+# Import the loans table
+loans_db <- dbGetQuery(con_sqlite, "SELECT * FROM loans")
+head(loans_db)
+
+# Query with a filter — students with math_score >= 15
 high_scores <- dbGetQuery(con_sqlite,
   "SELECT studentID, gender, math_score, it_score
    FROM students
