@@ -1,0 +1,225 @@
+---
+title: "HW1: Importing Data from Different Sources in R"
+author: "Zainab Suleiman"
+date: "2026-05-07"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Overview
+
+R can import data from many different sources:
+
+1. Text files (TXT, CSV)
+2. Excel files (XLSX)
+3. Statistical packages: SPSS (.sav), Stata (.dta), SAS (.sas7bdat)
+4. Database management systems (SQLite, PostgreSQL, MySQL)
+
+---
+
+## 1. Importing from Text Files
+
+### 1.1 Read a TAB-separated TXT file using base R
+
+```{r read-txt}
+# read.table reads any delimiter-separated file
+class_data <- read.table("data/class_data.txt", header = TRUE, sep = "\t")
+head(class_data)
+str(class_data)
+```
+
+### 1.2 Read a CSV file
+
+```{r read-csv}
+# read.csv is a shortcut for read.table with sep=","
+student_data <- read.csv("data/student_data.csv", header = TRUE)
+head(student_data)
+str(student_data)
+```
+
+---
+
+## 2. Importing from Excel Files
+
+```{r install-readxl, eval=FALSE}
+install.packages("readxl")
+```
+
+```{r read-excel}
+library(readxl)
+
+# Create a sample Excel file to demonstrate (run once)
+if (!file.exists("data/student_data.xlsx")) {
+  if (!requireNamespace("writexl", quietly = TRUE)) install.packages("writexl")
+  library(writexl)
+  write_xlsx(student_data, "data/student_data.xlsx")
+}
+
+excel_data <- read_excel("data/student_data.xlsx")
+head(excel_data)
+str(excel_data)
+```
+
+---
+
+## 3. Importing from Statistical Packages (SPSS, Stata, SAS)
+
+```{r install-haven, eval=FALSE}
+install.packages("haven")
+```
+
+```{r load-haven}
+library(haven)
+```
+
+### 3.1 Create and import SPSS (.sav) file
+
+```{r spss}
+# Create sample SPSS file
+loan_data <- data.frame(
+  LoanID        = 1001:1010,
+  ClientName    = paste("Client", 1:10),
+  Gender        = c("Male","Female","Male","Female","Male","Female","Male","Female","Male","Female"),
+  Age           = c(28, 34, 45, 23, 38, 30, 52, 27, 41, 36),
+  LoanAmount    = c(5000000, 3000000, 8000000, 1500000, 6000000,
+                    2500000, 9000000, 4000000, 7000000, 3500000),
+  InterestRate  = c(15.0, 12.5, 18.0, 11.0, 16.5,
+                    13.0, 17.5, 14.0, 15.5, 12.0),
+  LoanTermMonths = c(24, 12, 36, 12, 24, 12, 48, 24, 36, 12),
+  Status        = c("Active","Closed","Active","Pending","Defaulted",
+                    "Active","Closed","Active","Pending","Active")
+)
+
+write_sav(loan_data, "data/loan_data.sav")
+
+# Read back the SPSS file
+spss_data <- read_sav("data/loan_data.sav")
+head(spss_data)
+str(spss_data)
+```
+
+### 3.2 Create and import Stata (.dta) file
+
+```{r stata}
+write_dta(loan_data, "data/loan_data.dta")
+
+# Read the Stata file
+stata_data <- read_dta("data/loan_data.dta")
+head(stata_data)
+str(stata_data)
+```
+
+### 3.3 Create and import SAS (.sas7bdat) file
+
+```{r sas}
+write_sas(loan_data, "data/loan_data.sas7bdat")
+
+# Read the SAS file
+sas_data <- read_sas("data/loan_data.sas7bdat")
+head(sas_data)
+str(sas_data)
+```
+
+---
+
+## 4. Importing from Database Management Systems
+
+### 4.1 SQLite (portable, no server needed)
+
+```{r install-dbi, eval=FALSE}
+install.packages("DBI")
+install.packages("RSQLite")
+```
+
+```{r sqlite}
+library(DBI)
+library(RSQLite)
+
+# Create a local SQLite database
+con_sqlite <- dbConnect(RSQLite::SQLite(), "data/school.db")
+
+# Write the student table into the database
+dbWriteTable(con_sqlite, "students", student_data, overwrite = TRUE)
+dbWriteTable(con_sqlite, "loans",    loan_data,    overwrite = TRUE)
+
+# List available tables
+dbListTables(con_sqlite)
+
+# Query the students table
+students_db <- dbGetQuery(con_sqlite, "SELECT * FROM students")
+head(students_db)
+
+# Query with a filter
+high_scores <- dbGetQuery(con_sqlite,
+  "SELECT studentID, gender, math_score, it_score
+   FROM students
+   WHERE math_score >= 15")
+print(high_scores)
+
+dbDisconnect(con_sqlite)
+```
+
+### 4.2 PostgreSQL (requires a running PostgreSQL server)
+
+```{r postgres, eval=FALSE}
+install.packages("RPostgres")
+library(RPostgres)
+
+con_pg <- dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "your_database_name",
+  host     = "localhost",
+  user     = "your_username",
+  password = "your_password",
+  port     = 5432
+)
+
+students_pg <- dbGetQuery(con_pg, "SELECT * FROM students LIMIT 10")
+head(students_pg)
+
+dbDisconnect(con_pg)
+```
+
+### 4.3 MySQL (requires a running MySQL server)
+
+```{r mysql, eval=FALSE}
+install.packages("RMySQL")
+library(RMySQL)
+
+con_mysql <- dbConnect(
+  RMySQL::MySQL(),
+  dbname   = "your_database_name",
+  host     = "localhost",
+  user     = "your_username",
+  password = "your_password",
+  port     = 3306
+)
+
+students_mysql <- dbGetQuery(con_mysql, "SELECT * FROM students LIMIT 10")
+head(students_mysql)
+
+dbDisconnect(con_mysql)
+```
+
+---
+
+## Summary
+
+| Source                  | Package    | Function           |
+|-------------------------|------------|--------------------|
+| Text file (.txt)        | base R     | `read.table()`     |
+| CSV file (.csv)         | base R     | `read.csv()`       |
+| Excel file (.xlsx)      | `readxl`   | `read_excel()`     |
+| SPSS file (.sav)        | `haven`    | `read_sav()`       |
+| Stata file (.dta)       | `haven`    | `read_dta()`       |
+| SAS file (.sas7bdat)    | `haven`    | `read_sas()`       |
+| SQLite database         | `DBI` + `RSQLite`  | `dbGetQuery()` |
+| PostgreSQL database     | `DBI` + `RPostgres`| `dbGetQuery()` |
+| MySQL database          | `DBI` + `RMySQL`   | `dbGetQuery()` |

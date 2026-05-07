@@ -1,0 +1,11 @@
+studentID	gender	math_score	it_score	height	weight
+1	M	12	13	165	60
+2	F	17	18	158	52
+3	M	10	11	170	75
+4	M	9	10	168	70
+5	F	NA	19	155	48
+6	F	15	14	162	55
+7	M	20	20	175	80
+8	F	13	16	160	54
+9	M	11	12	172	78
+10	F	18	17	157	50
